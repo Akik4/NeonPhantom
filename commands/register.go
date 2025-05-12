@@ -67,13 +67,13 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 
 		if opt, ok := optionMap["channel"]; ok {
 			margs = append(margs, opt.ChannelValue(nil).ID)
-			msgformat += "Channel defined on %s..."
+			msgformat += "Channel defined on %s\n"
 			//@TODO
 		}
 
 		if opt, ok := optionMap["message"]; ok {
 			margs = append(margs, opt.StringValue())
-			msgformat += "Message defined by %s\n"
+			msgformat += "Message defined by %s"
 			//@TODO
 		}
 
