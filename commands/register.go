@@ -64,6 +64,19 @@ var commands = []*discordgo.ApplicationCommand{
 		},
 		DefaultMemberPermissions: &defaultPermissions,
 	},
+	{
+		Name:        "ban",
+		Description: "For banning an user",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user",
+				Description: "Define user to ban",
+				Required:    true,
+			},
+		},
+		DefaultMemberPermissions: &defaultPermissions,
+	},
 }
 
 var guildID = flag.String("guild", "", "Test uild ID")
@@ -153,10 +166,41 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 		if opt, ok := optionsMap["user"]; ok {
 			margs = append(margs, opt.UserValue(nil).ID)
 			user = opt.UserValue(nil)
-			msgformat = "User kick <@%s>"
+			msgformat = "<@%s> is kicked"
 		}
 
 		s.GuildMemberDelete(i.GuildID, user.ID)
+
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: fmt.Sprintf(
+					msgformat,
+					margs...,
+				),
+			},
+		})
+	},
+	"ban": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+		options := i.ApplicationCommandData().Options
+
+		optionsMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+		for _, opt := range options {
+			optionsMap[opt.Name] = opt
+		}
+
+		margs := make([]interface{}, 0, len(options))
+		msgformat := ""
+		user := new(discordgo.User)
+
+		if opt, ok := optionsMap["user"]; ok {
+			margs = append(margs, opt.UserValue(nil).ID)
+			user = opt.UserValue(nil)
+			msgformat = "<@%s> is banned"
+		}
+
+		s.GuildBanCreate(i.GuildID, user.ID, -1)
 
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
