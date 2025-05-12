@@ -18,6 +18,8 @@ var commands = []*discordgo.ApplicationCommand{
 	&kickData,
 	&banData,
 	&unbanData,
+	&muteData,
+	&unmuteData,
 }
 
 var guildID = flag.String("guild", "", "Test uild ID")
@@ -28,6 +30,8 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 	"kick":    kick,
 	"ban":     ban,
 	"unban":   unban,
+	"mute":    mute,
+	"unmute":  unmute,
 }
 
 func RegisterCommands(discord *discordgo.Session) {
