@@ -77,6 +77,19 @@ var commands = []*discordgo.ApplicationCommand{
 		},
 		DefaultMemberPermissions: &defaultPermissions,
 	},
+	{
+		Name:        "unban",
+		Description: "For unbanning an user",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "userid",
+				Description: "Define user id to unban",
+				Required:    true,
+			},
+		},
+		DefaultMemberPermissions: &defaultPermissions,
+	},
 }
 
 var guildID = flag.String("guild", "", "Test uild ID")
@@ -201,6 +214,37 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 		}
 
 		s.GuildBanCreate(i.GuildID, user.ID, -1)
+
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: fmt.Sprintf(
+					msgformat,
+					margs...,
+				),
+			},
+		})
+	},
+	"unban": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+		options := i.ApplicationCommandData().Options
+
+		optionsMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+		for _, opt := range options {
+			optionsMap[opt.Name] = opt
+		}
+
+		margs := make([]interface{}, 0, len(options))
+		msgformat := ""
+		userID := ""
+
+		if opt, ok := optionsMap["userid"]; ok {
+			margs = append(margs, opt.StringValue())
+			userID = opt.StringValue()
+			msgformat = "<@%s> is unbanned"
+		}
+
+		s.GuildBanDelete(i.GuildID, userID)
 
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
