@@ -38,7 +38,7 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
-	commands.RemoveCommands()
+	commands.RemoveCommands(discord)
 
 	discord.Close()
 }

@@ -10,6 +10,7 @@ import (
 
 var removeCommands = flag.Bool("rmcmd", true, "remove all commands after shuting down")
 var registeredCommands = make([]*discordgo.ApplicationCommand, len(commands))
+var defaultPermissions int64 = discordgo.PermissionAdministrator
 
 var commands = []*discordgo.ApplicationCommand{
 	{
@@ -29,6 +30,7 @@ var commands = []*discordgo.ApplicationCommand{
 				Required:    false,
 			},
 		},
+		DefaultMemberPermissions: &defaultPermissions,
 	},
 	{
 		Name:        "leave",
@@ -47,6 +49,20 @@ var commands = []*discordgo.ApplicationCommand{
 				Required:    false,
 			},
 		},
+		DefaultMemberPermissions: &defaultPermissions,
+	},
+	{
+		Name:        "kick",
+		Description: "For kicking an user",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user",
+				Description: "Define the user to kick",
+				Required:    true,
+			},
+		},
+		DefaultMemberPermissions: &defaultPermissions,
 	},
 }
 
@@ -121,6 +137,37 @@ var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interac
 			},
 		})
 	},
+	"kick": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+		options := i.ApplicationCommandData().Options
+
+		optionsMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+		for _, opt := range options {
+			optionsMap[opt.Name] = opt
+		}
+
+		margs := make([]interface{}, 0, len(options))
+		msgformat := ""
+		user := new(discordgo.User)
+
+		if opt, ok := optionsMap["user"]; ok {
+			margs = append(margs, opt.UserValue(nil).ID)
+			user = opt.UserValue(nil)
+			msgformat = "User kick <@%s>"
+		}
+
+		s.GuildMemberDelete(i.GuildID, user.ID)
+
+		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+			Type: discordgo.InteractionResponseChannelMessageWithSource,
+			Data: &discordgo.InteractionResponseData{
+				Content: fmt.Sprintf(
+					msgformat,
+					margs...,
+				),
+			},
+		})
+	},
 }
 
 func RegisterCommands(discord *discordgo.Session) {
@@ -131,7 +178,9 @@ func RegisterCommands(discord *discordgo.Session) {
 		cmd, err := discord.ApplicationCommandCreate(discord.State.User.ID, *guildID, v)
 		if err != nil {
 			fmt.Println("A command cannot be created")
+			fmt.Println(err.Error())
 		}
+		fmt.Println("Adding a command")
 		registeredCommands[i] = cmd
 	}
 }
